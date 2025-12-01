@@ -14,7 +14,7 @@ Quick start
 
 ```bash
 npm install
-npm run dev
+npm run start
 ```
 
 API endpoints
@@ -35,7 +35,7 @@ Notes
 
 Example run
 
-1. Start the server: `npm run dev`
+1. Start the server: `npm start`
 2. Run the example script (after setting env or using defaults):
 
 ```bash
