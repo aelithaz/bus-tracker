@@ -1,0 +1,30 @@
+{
+  "name": "bus-tracker",
+  "version": "1.0.0",
+  "description": "This backend lets you:",
+  "main": "index.js",
+  "scripts": {
+    "test": "node scripts/register_and_subscribe.js",
+    "start": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aelithaz/bus-tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aelithaz/bus-tracker/issues"
+  },
+  "homepage": "https://github.com/aelithaz/bus-tracker#readme",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.6.0",
+    "fs": "^0.0.1-security",
+    "mongoose": "^9.0.0"
+  }
+}
