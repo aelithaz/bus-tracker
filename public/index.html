@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bus Tracker Backend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Leaflet CSS for map -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+      }
+      body {
+        margin: 0;
+        padding: 1.5rem;
+      }
+      h1,
+      h2 {
+        margin: 0 0 0.5rem;
+      }
+      .page {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      .grid {
+        display: grid;
+        gap: 1rem;
+      }
+      @media (min-width: 800px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .card {
+        background: #020617;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        border: 1px solid #1f2937;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-bottom: 0.25rem;
+      }
+      input {
+        width: 100%;
+        padding: 0.4rem 0.55rem;
+        border-radius: 0.4rem;
+        border: 1px solid #4b5563;
+        background: #020617;
+        color: #e5e7eb;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+      input:focus {
+        outline: none;
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 1px #38bdf8;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(to right, #22c55e, #14b8a6);
+        color: #020617;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+      }
+      button.secondary {
+        background: #111827;
+        color: #e5e7eb;
+        border: 1px solid #374151;
+      }
+      .row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .row > * {
+        flex: 1;
+      }
+      pre {
+        background: #020617;
+        border-radius: 0.5rem;
+        border: 1px solid #1f2937;
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        overflow-x: auto;
+        max-height: 260px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .small {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .tag {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid #374151;
+        color: #9ca3af;
+      }
+      .muted {
+        color: #6b7280;
+      }
+
+      /* Arrivals table */
+      table.arrivals {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+      }
+      table.arrivals th,
+      table.arrivals td {
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid #1f2937;
+      }
+      table.arrivals th {
+        text-align: left;
+        font-weight: 600;
+        color: #9ca3af;
+      }
+      table.arrivals tr:hover td {
+        background: rgba(148, 163, 184, 0.08);
+      }
+      .pill {
+        display: inline-block;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #e0f2fe;
+        font-size: 0.7rem;
+      }
+      .pill-soft {
+        background: rgba(148, 163, 184, 0.15);
+        color: #e5e7eb;
+      }
+
+      /* Map */
+      #stop-map {
+        margin-top: 0.75rem;
+        height: 230px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid #1f2937;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header style="margin-bottom: 1.5rem">
+        <div class="row" style="align-items: baseline">
+          <h1>Bus Tracker Backend</h1>
+          <span class="tag">admin panel</span>
+        </div>
+        <p class="small">
+          This page talks to <code>/api/users</code>, <code>/api/subscriptions</code>, and
+          <code>/api/mtd</code> on this server. Use it to test registrations, subscriptions, and view
+          upcoming arrivals for a stop.
+        </p>
+      </header>
+
+      <section class="grid">
+        <!-- Register token -->
+        <div class="card">
+          <h2>1. Register FCM token</h2>
+          <p class="small muted">
+            In production, the token comes from Firebase in the client; here you can paste any string to
+            exercise the backend.
+          </p>
+          <label for="reg-email">Email</label>
+          <input id="reg-email" placeholder="student@example.com" />
+
+          <label for="reg-token">FCM token</label>
+          <input id="reg-token" placeholder="fake-token-for-dev" />
+
+          <button id="btn-register">Register token</button>
+        </div>
+
+        <!-- Create subscription -->
+        <div class="card">
+          <h2>2. Create subscription</h2>
+          <p class="small muted">
+            Subscribe an email to a <code>stop_id</code> and <code>trip_id</code>. The poller will send a push
+            when the bus is within <code>notifyBeforeMinutes</code>.
+          </p>
+
+          <label for="sub-email">Email</label>
+          <input id="sub-email" placeholder="student@example.com" />
+
+          <label for="sub-stop">Stop ID</label>
+          <input id="sub-stop" placeholder="it:1" />
+
+          <label for="sub-trip">Trip ID</label>
+          <input id="sub-trip" placeholder="example-trip-id" />
+
+          <label for="sub-mins">Notify before (minutes)</label>
+          <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
+
+          <button id="btn-subscribe">Create / update subscription</button>
+        </div>
+
+        <!-- View subscriptions -->
+        <div class="card">
+          <h2>3. View subscriptions</h2>
+          <p class="small muted">Inspect what’s currently stored in Mongo.</p>
+
+          <div class="row">
+            <div>
+              <label for="list-email">Email (optional)</label>
+              <input id="list-email" placeholder="student@example.com" />
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="btn-list-email">List by email</button>
+            <button id="btn-list-all" class="secondary">List all (max 200)</button>
+          </div>
+        </div>
+
+        <!-- Arrivals + Map -->
+        <div class="card">
+          <h2>4. Arrivals for a stop</h2>
+          <p class="small muted">
+            Calls a backend proxy for <code>getstoptimesbystop</code> using the server’s
+            <code>MTD_API_KEY</code>, then shows upcoming arrivals and the stop location.
+          </p>
+
+          <label for="stop-id">Stop ID</label>
+          <input id="stop-id" placeholder="it:1" />
+
+          <button id="btn-stop-times">Fetch arrivals</button>
+
+          <div id="stop-meta" class="small muted" style="margin-top: 0.5rem"></div>
+
+          <div style="overflow-x: auto">
+            <table class="arrivals" id="arrivals-table"></table>
+          </div>
+
+          <!-- Map -->
+          <div id="stop-map"></div>
+        </div>
+      </section>
+
+      <section style="margin-top: 1.5rem">
+        <div class="card">
+          <div class="row" style="justify-content: space-between; align-items: center">
+            <h2>Console</h2>
+            <button id="btn-clear" class="secondary">Clear</button>
+          </div>
+          <pre id="output">Ready.</pre>
+        </div>
+      </section>
+    </div>
+
+    <!-- Leaflet JS for map -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <script>
+      const API_BASE = ''; // same origin
+
+      const $ = (id) => document.getElementById(id);
+      const out = $('output');
+      const arrivalsTable = $('arrivals-table');
+      const stopMeta = $('stop-meta');
+
+      let stopMap = null;
+      let stopMarker = null;
+
+      function log(msg, obj) {
+        const time = new Date().toLocaleTimeString();
+        let text = `[${time}] ${msg}`;
+        if (obj !== undefined) {
+          text += '\n' + JSON.stringify(obj, null, 2);
+        }
+        out.textContent = text + '\n\n' + out.textContent;
+      }
+
+      async function callJson(path, options = {}) {
+        const url = API_BASE + path;
+        const opts = {
+          headers: { 'Content-Type': 'application/json' },
+          ...options,
+        };
+        if (opts.body && typeof opts.body !== 'string') {
+          opts.body = JSON.stringify(opts.body);
+        }
+        const res = await fetch(url, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw { status: res.status, data };
+        }
+        return data;
+      }
+
+      // Parse MTD HH:mm:ss (with possible 30-hour clock) into Date
+      function parseMtdTimeToDate(now, timeStr) {
+        if (!timeStr) return null;
+        const parts = timeStr.split(':').map((x) => parseInt(x, 10));
+        if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return null;
+
+        let [h, m, s] = parts;
+        if (Number.isNaN(s)) s = 0;
+
+        const d = new Date(now);
+        if (h >= 24) {
+          h -= 24;
+          d.setDate(d.getDate() + 1);
+        }
+        d.setHours(h, m, s, 0);
+        return d;
+      }
+
+      function renderArrivals(stopId, data) {
+        arrivalsTable.innerHTML = '';
+        stopMeta.textContent = '';
+
+        if (!data || !Array.isArray(data.stop_times) || data.stop_times.length === 0) {
+          stopMeta.textContent = `No upcoming arrivals for stop ${stopId}.`;
+          return;
+        }
+
+        const now = new Date();
+        const rows = [];
+
+        for (const st of data.stop_times) {
+          const trip = st.trip || {};
+          const arrivalStr = st.arrival_time;
+          const arrivalDate = parseMtdTimeToDate(now, arrivalStr);
+          if (!arrivalDate) continue;
+
+          const diffMinFloat = (arrivalDate - now) / 60000;
+          const diffMin = Math.round(diffMinFloat);
+
+          if (diffMin < -5) continue; // skip far-past arrivals
+
+          rows.push({
+            route: trip.route_id || '-',
+            tripId: trip.trip_id || '-',
+            headsign: trip.trip_headsign || '',
+            arrivalStr,
+            diffMin,
+            arrivalDate,
+          });
+        }
+
+        if (!rows.length) {
+          stopMeta.textContent = `No upcoming arrivals for stop ${stopId}.`;
+          return;
+        }
+
+        rows.sort((a, b) => a.arrivalDate - b.arrivalDate);
+        const limited = rows.slice(0, 12);
+
+        const soonest = limited[0];
+        stopMeta.textContent = `Showing ${limited.length} upcoming arrivals for stop ${stopId}. Next bus in ${
+          soonest.diffMin >= 0 ? soonest.diffMin : '<1'
+        } min at ${soonest.arrivalStr}.`;
+
+        const header = `
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Trip</th>
+              <th>Headsign</th>
+              <th>Time</th>
+              <th>In</th>
+            </tr>
+          </thead>
+        `;
+        const bodyRows = limited
+          .map((r) => {
+            const diffLabel = r.diffMin > 0 ? `${r.diffMin} min` : 'now';
+            return `
+              <tr>
+                <td><span class="pill">${r.route}</span></td>
+                <td><span class="pill pill-soft">${r.tripId}</span></td>
+                <td>${r.headsign || '<span class="muted">—</span>'}</td>
+                <td>${r.arrivalStr}</td>
+                <td>${diffLabel}</td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        arrivalsTable.innerHTML = header + `<tbody>${bodyRows}</tbody>`;
+      }
+
+      function renderStopMap(stopInfo) {
+        if (!stopInfo || !stopInfo.stop_lat || !stopInfo.stop_lon) return;
+
+        const lat = Number(stopInfo.stop_lat);
+        const lon = Number(stopInfo.stop_lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+        if (!stopMap) {
+          stopMap = L.map('stop-map').setView([lat, lon], 16);
+
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(stopMap);
+
+          stopMarker = L.marker([lat, lon]).addTo(stopMap);
+        } else {
+          stopMap.setView([lat, lon], 16);
+          stopMarker.setLatLng([lat, lon]);
+        }
+
+        const name = stopInfo.stop_name || 'Bus stop';
+        const id = stopInfo.stop_id || '';
+        stopMarker.bindPopup(`<strong>${name}</strong><br>${id}`).openPopup();
+      }
+
+      // --- Event handlers ---
+
+      $('btn-register').addEventListener('click', async () => {
+        const email = $('reg-email').value.trim();
+        const fcmToken = $('reg-token').value.trim();
+        if (!email || !fcmToken) {
+          alert('Email and token are required');
+          return;
+        }
+        try {
+          log('POST /api/users/register-token', { email, fcmToken });
+          const data = await callJson('/api/users/register-token', {
+            method: 'POST',
+            body: { email, fcmToken },
+          });
+          log('Success: token registered', data);
+        } catch (err) {
+          log('Error registering token', err);
+        }
+      });
+
+      $('btn-subscribe').addEventListener('click', async () => {
+        const email = $('sub-email').value.trim();
+        const stop_id = $('sub-stop').value.trim();
+        const trip_id = $('sub-trip').value.trim();
+        const minsRaw = $('sub-mins').value.trim();
+        if (!email || !stop_id || !trip_id) {
+          alert('Email, stop ID, and trip ID are required');
+          return;
+        }
+        const body = { email, stop_id, trip_id };
+        if (minsRaw !== '') body.notifyBeforeMinutes = Number(minsRaw);
+        try {
+          log('POST /api/subscriptions', body);
+          const data = await callJson('/api/subscriptions', {
+            method: 'POST',
+            body,
+          });
+          log('Success: subscription upserted', data);
+        } catch (err) {
+          log('Error creating subscription', err);
+        }
+      });
+
+      $('btn-list-email').addEventListener('click', async () => {
+        const email = $('list-email').value.trim();
+        if (!email) {
+          alert('Enter an email to list subscriptions for');
+          return;
+        }
+        const path = `/api/subscriptions/by-email/${encodeURIComponent(email)}`;
+        try {
+          log(`GET ${path}`);
+          const data = await callJson(path);
+          log('Subscriptions for email', data);
+        } catch (err) {
+          log('Error listing subscriptions by email', err);
+        }
+      });
+
+      $('btn-list-all').addEventListener('click', async () => {
+        try {
+          log('GET /api/subscriptions');
+          const data = await callJson('/api/subscriptions');
+          log('All subscriptions (limited)', data);
+        } catch (err) {
+          log('Error listing all subscriptions', err);
+        }
+      });
+
+      $('btn-stop-times').addEventListener('click', async () => {
+        const stopId = $('stop-id').value.trim();
+        if (!stopId) {
+          alert('Enter a stop ID');
+          return;
+        }
+        const path = `/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`;
+        try {
+          log(`GET ${path}`);
+          const data = await callJson(path);
+          log('MTD stop times raw response', data);
+          renderArrivals(stopId, data);
+
+          // Fetch stop metadata for map
+          try {
+            const stopInfo = await callJson(
+              `/api/mtd/stop-info?stop_id=${encodeURIComponent(stopId)}`
+            );
+            renderStopMap(stopInfo);
+            log('Updated map for stop', stopInfo);
+          } catch (mapErr) {
+            log('Error loading stop info for map', mapErr);
+          }
+        } catch (err) {
+          log('Error fetching stop times', err);
+          arrivalsTable.innerHTML = '';
+          stopMeta.textContent = 'Failed to load arrivals.';
+        }
+      });
+
+      $('btn-clear').addEventListener('click', () => {
+        out.textContent = 'Cleared.\n';
+      });
+    </script>
+  </body>
+</html>
