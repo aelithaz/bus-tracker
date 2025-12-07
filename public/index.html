@@ -15,7 +15,8 @@
 
     <style>
       :root {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
         background: #0f172a;
         color: #e5e7eb;
       }
@@ -28,18 +29,77 @@
         margin: 0 0 0.5rem;
       }
       .page {
-        max-width: 960px;
+        max-width: 1100px;
         margin: 0 auto;
       }
-      .grid {
-        display: grid;
-        gap: 1rem;
+
+      /* HEADER / NAV */
+
+      header.app-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
       }
-      @media (min-width: 800px) {
-        .grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+      .title-block {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+      .tag {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid #374151;
+        color: #9ca3af;
+      }
+      .subtext {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .nav-buttons {
+        display: inline-flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+      .nav-button {
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid #374151;
+        font-size: 0.78rem;
+        background: #020617;
+        color: #e5e7eb;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .nav-button span.icon {
+        font-size: 0.9rem;
+      }
+      .nav-button:hover {
+        background: #111827;
+      }
+
+      /* MAIN LAYOUT */
+
+      .main-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 1rem;
+        align-items: stretch;
+      }
+      @media (max-width: 900px) {
+        .main-layout {
+          grid-template-columns: minmax(0, 1fr);
         }
       }
+
       .card {
         background: #020617;
         border-radius: 0.75rem;
@@ -47,6 +107,23 @@
         border: 1px solid #1f2937;
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
       }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .small {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .muted {
+        color: #6b7280;
+      }
+
       label {
         display: block;
         font-size: 0.85rem;
@@ -55,13 +132,14 @@
       }
       input {
         width: 100%;
-        padding: 0.4rem 0.55rem;
+        box-sizing: border-box;
+        padding: 0.5rem 0.7rem;
         border-radius: 0.4rem;
         border: 1px solid #4b5563;
         background: #020617;
         color: #e5e7eb;
         font-size: 0.9rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
       }
       input:focus {
         outline: none;
@@ -87,44 +165,17 @@
         color: #e5e7eb;
         border: 1px solid #374151;
       }
-      .row {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-      }
-      .row > * {
-        flex: 1;
-      }
-      pre {
-        background: #020617;
-        border-radius: 0.5rem;
+
+      /* MAP AND ARRIVALS */
+
+      #stop-map {
+        width: 100%;
+        height: 420px;
+        border-radius: 0.75rem;
+        overflow: hidden;
         border: 1px solid #1f2937;
-        padding: 0.75rem;
-        font-size: 0.8rem;
-        overflow-x: auto;
-        max-height: 260px;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-      .small {
-        font-size: 0.8rem;
-        color: #9ca3af;
-      }
-      .tag {
-        display: inline-block;
-        padding: 0.15rem 0.5rem;
-        border-radius: 999px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        border: 1px solid #374151;
-        color: #9ca3af;
-      }
-      .muted {
-        color: #6b7280;
       }
 
-      /* Arrivals table */
       table.arrivals {
         width: 100%;
         border-collapse: collapse;
@@ -157,121 +208,209 @@
         color: #e5e7eb;
       }
 
-      /* Map */
-      #stop-map {
-        margin-top: 0.75rem;
-        height: 230px;
-        border-radius: 0.75rem;
-        overflow: hidden;
+      /* MODALS */
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.65);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1200;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-card {
+        width: 100%;
+        max-width: 420px;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+      }
+      .modal-title {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .modal-close {
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      pre {
+        background: #020617;
+        border-radius: 0.5rem;
         border: 1px solid #1f2937;
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        overflow-x: auto;
+        max-height: 260px;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
     </style>
   </head>
   <body>
     <div class="page">
-      <header style="margin-bottom: 1.5rem">
-        <div class="row" style="align-items: baseline">
-          <h1>Bus Tracker Backend</h1>
-          <span class="tag">admin panel</span>
+      <!-- HEADER / NAV -->
+      <header class="app-header">
+        <div>
+          <div class="title-block">
+            <h1>Bus Tracker</h1>
+            <span class="tag">backend tools</span>
+          </div>
+          <p class="subtext">
+            Live arrivals and map are front and center. Use the tools on the right for FCM tokens,
+            subscriptions, and console output.
+          </p>
         </div>
-        <p class="small">
-          This page talks to <code>/api/users</code>, <code>/api/subscriptions</code>, and
-          <code>/api/mtd</code> on this server. Use it to test registrations, subscriptions, and view
-          upcoming arrivals for a stop.
-        </p>
+
+        <div class="nav-buttons">
+          <button class="nav-button" data-modal-target="modal-fcm">
+            <span class="icon">🔒</span>
+            FCM token
+          </button>
+          <button class="nav-button" data-modal-target="modal-subscriptions">
+            <span class="icon">📋</span>
+            Subscriptions
+          </button>
+          <button class="nav-button" data-modal-target="modal-console">
+            <span class="icon">🧪</span>
+            Console
+          </button>
+        </div>
       </header>
 
-      <section class="grid">
-        <!-- Register token -->
-        <div class="card">
-          <h2>1. Register FCM token</h2>
-          <p class="small muted">
-            In production, the token comes from Firebase in the client; here you can paste any string to
-            exercise the backend.
-          </p>
-          <label for="reg-email">Email</label>
-          <input id="reg-email" placeholder="student@example.com" />
-
-          <label for="reg-token">FCM token</label>
-          <input id="reg-token" placeholder="fake-token-for-dev" />
-
-          <button id="btn-register">Register token</button>
-        </div>
-
-        <!-- Create subscription -->
-        <div class="card">
-          <h2>2. Create subscription</h2>
-          <p class="small muted">
-            Subscribe an email to a <code>stop_id</code> and <code>trip_id</code>. The poller will send a push
-            when the bus is within <code>notifyBeforeMinutes</code>.
-          </p>
-
-          <label for="sub-email">Email</label>
-          <input id="sub-email" placeholder="student@example.com" />
-
-          <label for="sub-stop">Stop ID</label>
-          <input id="sub-stop" placeholder="it:1" />
-
-          <label for="sub-trip">Trip ID</label>
-          <input id="sub-trip" placeholder="example-trip-id" />
-
-          <label for="sub-mins">Notify before (minutes)</label>
-          <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
-
-          <button id="btn-subscribe">Create / update subscription</button>
-        </div>
-
-        <!-- View subscriptions -->
-        <div class="card">
-          <h2>3. View subscriptions</h2>
-          <p class="small muted">Inspect what’s currently stored in Mongo.</p>
-
-          <div class="row">
-            <div>
-              <label for="list-email">Email (optional)</label>
-              <input id="list-email" placeholder="student@example.com" />
-            </div>
+      <!-- MAIN APP LAYOUT -->
+      <main class="main-layout">
+        <!-- Map -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Map</h2>
+            <span class="small muted">Centered on the selected stop & route</span>
           </div>
+          <div id="stop-map"></div>
+        </section>
 
-          <div class="row">
-            <button id="btn-list-email">List by email</button>
-            <button id="btn-list-all" class="secondary">List all (max 200)</button>
+        <!-- Arrivals panel -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Arrivals for a stop</h2>
           </div>
-        </div>
-
-        <!-- Arrivals + Map -->
-        <div class="card">
-          <h2>4. Arrivals for a stop</h2>
           <p class="small muted">
-            Calls a backend proxy for <code>getstoptimesbystop</code> using the server’s
-            <code>MTD_API_KEY</code>, then shows upcoming arrivals and the stop location.
+            Enter a <code>stop_id</code>, then fetch upcoming arrivals. The map will pan to the stop and
+            draw the route when available.
           </p>
 
           <label for="stop-id">Stop ID</label>
-          <input id="stop-id" placeholder="it:1" />
+          <input id="stop-id" placeholder="IU:1" />
 
-          <button id="btn-stop-times">Fetch arrivals</button>
+          <button id="btn-stop-times">Fetch arrivals & route</button>
 
           <div id="stop-meta" class="small muted" style="margin-top: 0.5rem"></div>
 
           <div style="overflow-x: auto">
             <table class="arrivals" id="arrivals-table"></table>
           </div>
+        </section>
+      </main>
+    </div>
 
-          <!-- Map -->
-          <div id="stop-map"></div>
-        </div>
-      </section>
-
-      <section style="margin-top: 1.5rem">
-        <div class="card">
-          <div class="row" style="justify-content: space-between; align-items: center">
-            <h2>Console</h2>
-            <button id="btn-clear" class="secondary">Clear</button>
+    <!-- MODAL: FCM TOKEN -->
+    <div class="modal-backdrop" id="modal-fcm">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Register FCM token</div>
+            <p class="small muted">
+              In production, the token comes from Firebase. Here you can paste any string to exercise
+              <code>/api/users/register-token</code>.
+            </p>
           </div>
-          <pre id="output">Ready.</pre>
+          <button class="modal-close" data-modal-close>&times;</button>
         </div>
-      </section>
+
+        <label for="reg-email">Email</label>
+        <input id="reg-email" placeholder="student@example.com" />
+
+        <label for="reg-token">FCM token</label>
+        <input id="reg-token" placeholder="fake-token-for-dev" />
+
+        <button id="btn-register">Register token</button>
+      </div>
+    </div>
+
+    <!-- MODAL: SUBSCRIPTIONS -->
+    <div class="modal-backdrop" id="modal-subscriptions">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Subscriptions</div>
+            <p class="small muted">
+              Create subscriptions to <code>stop_id</code> + <code>trip_id</code> and inspect what’s stored
+              in Mongo.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <!-- Create subscription -->
+        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
+        <label for="sub-email">Email</label>
+        <input id="sub-email" placeholder="student@example.com" />
+
+        <label for="sub-stop">Stop ID</label>
+        <input id="sub-stop" placeholder="IU:1" />
+
+        <label for="sub-trip">Trip ID</label>
+        <input id="sub-trip" placeholder="example-trip-id" />
+
+        <label for="sub-mins">Notify before (minutes)</label>
+        <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
+
+        <button id="btn-subscribe">Create / update subscription</button>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
+
+        <!-- View subscriptions -->
+        <h3 style="margin: 0 0 0.35rem; font-size: 0.9rem">Inspect</h3>
+        <label for="list-email">Email (optional)</label>
+        <input id="list-email" placeholder="student@example.com" />
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem">
+          <button id="btn-list-email" class="secondary">List by email</button>
+          <button id="btn-list-all" class="secondary">List all (max 200)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONSOLE -->
+    <div class="modal-backdrop" id="modal-console">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Console</div>
+            <p class="small muted">
+              Shows JSON responses and errors from the backend helper API calls.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.25rem">
+          <button id="btn-clear" class="secondary" style="margin-top: 0">
+            Clear
+          </button>
+        </div>
+        <pre id="output">Ready.</pre>
+      </div>
     </div>
 
     <!-- Leaflet JS for map -->
@@ -291,6 +430,9 @@
 
       let stopMap = null;
       let stopMarker = null;
+      let routeLine = null;
+
+      // ------------ logging / helper fetch -------------
 
       function log(msg, obj) {
         const time = new Date().toLocaleTimeString();
@@ -298,7 +440,7 @@
         if (obj !== undefined) {
           text += '\n' + JSON.stringify(obj, null, 2);
         }
-        out.textContent = text + '\n\n' + out.textContent;
+        if (out) out.textContent = text + '\n\n' + (out.textContent || '');
       }
 
       async function callJson(path, options = {}) {
@@ -318,7 +460,27 @@
         return data;
       }
 
-      // Parse MTD HH:mm:ss (with possible 30-hour clock) into Date
+      // ------------ map init -------------
+
+      // Default center = Illini Union-ish
+      const DEFAULT_CENTER = [40.1099, -88.2272];
+
+      function initMap() {
+        if (stopMap) return;
+
+        stopMap = L.map('stop-map').setView(DEFAULT_CENTER, 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors',
+        }).addTo(stopMap);
+
+        stopMarker = L.marker(DEFAULT_CENTER).addTo(stopMap);
+        stopMarker.bindPopup('<strong>Bus stop</strong><br>Waiting for stop info…');
+      }
+
+      // ------------ time helpers -------------
+
       function parseMtdTimeToDate(now, timeStr) {
         if (!timeStr) return null;
         const parts = timeStr.split(':').map((x) => parseInt(x, 10));
@@ -335,6 +497,8 @@
         d.setHours(h, m, s, 0);
         return d;
       }
+
+      // ------------ render arrivals -------------
 
       function renderArrivals(stopId, data) {
         arrivalsTable.innerHTML = '';
@@ -411,33 +575,101 @@
         arrivalsTable.innerHTML = header + `<tbody>${bodyRows}</tbody>`;
       }
 
+      // ------------ map render helpers -------------
+
       function renderStopMap(stopInfo) {
-        if (!stopInfo || !stopInfo.stop_lat || !stopInfo.stop_lon) return;
+        if (!stopInfo) return;
+        initMap();
 
         const lat = Number(stopInfo.stop_lat);
         const lon = Number(stopInfo.stop_lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
 
-        if (!stopMap) {
-          stopMap = L.map('stop-map').setView([lat, lon], 16);
-
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors',
-          }).addTo(stopMap);
-
-          stopMarker = L.marker([lat, lon]).addTo(stopMap);
-        } else {
-          stopMap.setView([lat, lon], 16);
-          stopMarker.setLatLng([lat, lon]);
-        }
+        stopMap.setView([lat, lon], 16);
+        stopMarker.setLatLng([lat, lon]);
 
         const name = stopInfo.stop_name || 'Bus stop';
         const id = stopInfo.stop_id || '';
         stopMarker.bindPopup(`<strong>${name}</strong><br>${id}`).openPopup();
       }
 
-      // --- Event handlers ---
+      function renderRoutePolyline(shapePoints, departureMeta) {
+        initMap();
+        if (!Array.isArray(shapePoints) || !shapePoints.length) return;
+
+        const latlngs = shapePoints
+          .map((p) => [Number(p.shape_pt_lat), Number(p.shape_pt_lon)])
+          .filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
+
+        if (!latlngs.length) return;
+
+        // Remove any previous line so we just show the current route
+        if (routeLine) {
+          stopMap.removeLayer(routeLine);
+          routeLine = null;
+        }
+
+        // Bright, high-contrast route line
+        routeLine = L.polyline(latlngs, {
+          weight: 6,
+          opacity: 0.95,
+          color: '#22c55e',        // bright green
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(stopMap);
+
+        if (departureMeta) {
+          const label = `${departureMeta.routeShort || departureMeta.routeId || ''} ${
+            departureMeta.headsign || ''
+          }`.trim();
+          log('Drew route polyline', {
+            stop: departureMeta.stopId,
+            route: label,
+            shape_id: departureMeta.shapeId,
+          });
+        }
+
+        // Zoom the map to fit the whole route nicely
+        stopMap.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+      }
+
+      async function fetchAndRenderRouteForStop(stopId) {
+        try {
+          const deps = await callJson(`/api/mtd/departures?stop_id=${encodeURIComponent(stopId)}`);
+          const list = deps.departures || deps.departure || [];
+          if (!Array.isArray(list) || !list.length) {
+            log('No live departures available for route mapping at this stop');
+            return;
+          }
+
+          const d = list.find((x) => x.shape_id) || list[0];
+          if (!d.shape_id) {
+            log('No shape_id on departures; cannot map route.');
+            return;
+          }
+
+          const shapeResp = await callJson(
+            `/api/mtd/shape?shape_id=${encodeURIComponent(d.shape_id)}`
+          );
+          const points = shapeResp.shapes || shapeResp.shape || shapeResp || [];
+          const meta = {
+            shapeId: d.shape_id,
+            stopId: stopId,
+            headsign: d.headsign || (d.trip && d.trip.trip_headsign) || '',
+            routeShort:
+              (d.route && (d.route.route_short_name || d.route.route_id)) ||
+              (d.trip && d.trip.route_id) ||
+              '',
+            routeId: (d.route && d.route.route_id) || (d.trip && d.trip.route_id) || '',
+          };
+
+          renderRoutePolyline(points, meta);
+        } catch (err) {
+          log('Error fetching route shape for stop', { stopId, err });
+        }
+      }
+
+      // ------------ event handlers -------------
 
       $('btn-register').addEventListener('click', async () => {
         const email = $('reg-email').value.trim();
@@ -513,14 +745,13 @@
           alert('Enter a stop ID');
           return;
         }
-        const path = `/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`;
+
         try {
-          log(`GET ${path}`);
-          const data = await callJson(path);
+          log(`GET /api/mtd/stop-times?stop_id=${stopId}`);
+          const data = await callJson(`/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`);
           log('MTD stop times raw response', data);
           renderArrivals(stopId, data);
 
-          // Fetch stop metadata for map
           try {
             const stopInfo = await callJson(
               `/api/mtd/stop-info?stop_id=${encodeURIComponent(stopId)}`
@@ -530,6 +761,8 @@
           } catch (mapErr) {
             log('Error loading stop info for map', mapErr);
           }
+
+          await fetchAndRenderRouteForStop(stopId);
         } catch (err) {
           log('Error fetching stop times', err);
           arrivalsTable.innerHTML = '';
@@ -538,8 +771,38 @@
       });
 
       $('btn-clear').addEventListener('click', () => {
-        out.textContent = 'Cleared.\n';
+        if (out) out.textContent = 'Cleared.\n';
       });
+
+      // ------------ modal wiring -------------
+
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('open');
+      }
+
+      function closeModal(el) {
+        el.classList.remove('open');
+      }
+
+      document.querySelectorAll('[data-modal-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-modal-target');
+          if (id) openModal(id);
+        });
+      });
+
+      document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+        backdrop.addEventListener('click', (e) => {
+          if (e.target === backdrop) closeModal(backdrop);
+        });
+        backdrop.querySelectorAll('[data-modal-close]').forEach((btn) => {
+          btn.addEventListener('click', () => closeModal(backdrop));
+        });
+      });
+
+      // Initialize map once DOM is ready
+      document.addEventListener('DOMContentLoaded', initMap);
     </script>
   </body>
 </html>
