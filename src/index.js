@@ -1,14 +1,24 @@
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
+const path = require('path');
 const { connect } = require('./config/db');
 const usersRouter = require('./routes/users');
 const subsRouter = require('./routes/subscriptions');
+const mtdRouter = require('./routes/mtd');
 const admin = require('firebase-admin');
 const makePoller = require('./worker/poller');
 
 const app = express();
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.use('/api/users', usersRouter);
+app.use('/api/subscriptions', subsRouter);
++ app.use('/api/mtd', mtdRouter);
+
+app.get('/health', (req, res) => res.send('bus-tracker backend running'));
 
 app.use('/api/users', usersRouter);
 app.use('/api/subscriptions', subsRouter);

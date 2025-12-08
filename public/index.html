@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bus Tracker Backend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Leaflet CSS for map -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+      }
+      body {
+        margin: 0;
+        padding: 1.5rem;
+      }
+      h1,
+      h2 {
+        margin: 0 0 0.5rem;
+      }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      /* HEADER / NAV */
+
+      header.app-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .title-block {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+      .tag {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid #374151;
+        color: #9ca3af;
+      }
+      .subtext {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .nav-buttons {
+        display: inline-flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+      .nav-button {
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid #374151;
+        font-size: 0.78rem;
+        background: #020617;
+        color: #e5e7eb;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .nav-button span.icon {
+        font-size: 0.9rem;
+      }
+      .nav-button:hover {
+        background: #111827;
+      }
+
+      /* MAIN LAYOUT */
+
+      .main-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 1rem;
+        align-items: stretch;
+      }
+      @media (max-width: 900px) {
+        .main-layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .card {
+        background: #020617;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        border: 1px solid #1f2937;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .small {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .muted {
+        color: #6b7280;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-bottom: 0.25rem;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 0.7rem;
+        border-radius: 0.4rem;
+        border: 1px solid #4b5563;
+        background: #020617;
+        color: #e5e7eb;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+      }
+      input:focus {
+        outline: none;
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 1px #38bdf8;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(to right, #22c55e, #14b8a6);
+        color: #020617;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+      }
+      button.secondary {
+        background: #111827;
+        color: #e5e7eb;
+        border: 1px solid #374151;
+      }
+
+      /* MAP AND ARRIVALS */
+
+      #stop-map {
+        width: 100%;
+        height: 420px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid #1f2937;
+      }
+
+      table.arrivals {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+      }
+      table.arrivals th,
+      table.arrivals td {
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid #1f2937;
+      }
+      table.arrivals th {
+        text-align: left;
+        font-weight: 600;
+        color: #9ca3af;
+      }
+      table.arrivals tr:hover td {
+        background: rgba(148, 163, 184, 0.08);
+      }
+      .pill {
+        display: inline-block;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #e0f2fe;
+        font-size: 0.7rem;
+      }
+      .pill-soft {
+        background: rgba(148, 163, 184, 0.15);
+        color: #e5e7eb;
+      }
+
+      /* MODALS */
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.65);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1200;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-card {
+        width: 100%;
+        max-width: 420px;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+      }
+      .modal-title {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .modal-close {
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      pre {
+        background: #020617;
+        border-radius: 0.5rem;
+        border: 1px solid #1f2937;
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        overflow-x: auto;
+        max-height: 260px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- HEADER / NAV -->
+      <header class="app-header">
+        <div>
+          <div class="title-block">
+            <h1>Bus Tracker</h1>
+            <span class="tag">backend tools</span>
+          </div>
+          <p class="subtext">
+            Live arrivals and map are front and center. Use the tools on the right for FCM tokens,
+            subscriptions, and console output.
+          </p>
+        </div>
+
+        <div class="nav-buttons">
+          <button class="nav-button" data-modal-target="modal-fcm">
+            <span class="icon">🔒</span>
+            FCM token
+          </button>
+          <button class="nav-button" data-modal-target="modal-subscriptions">
+            <span class="icon">📋</span>
+            Subscriptions
+          </button>
+          <button class="nav-button" data-modal-target="modal-console">
+            <span class="icon">🧪</span>
+            Console
+          </button>
+        </div>
+      </header>
+
+      <!-- MAIN APP LAYOUT -->
+      <main class="main-layout">
+        <!-- Map -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Map</h2>
+            <span class="small muted">Centered on the selected stop & route</span>
+          </div>
+          <div id="stop-map"></div>
+        </section>
+
+        <!-- Arrivals panel -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Arrivals for a stop</h2>
+          </div>
+          <p class="small muted">
+            Enter a <code>stop_id</code>, then fetch upcoming arrivals. The map will pan to the stop and
+            draw the route when available.
+          </p>
+
+          <label for="stop-id">Stop ID</label>
+          <input id="stop-id" placeholder="IU:1" />
+
+          <button id="btn-stop-times">Fetch arrivals & route</button>
+
+          <div id="stop-meta" class="small muted" style="margin-top: 0.5rem"></div>
+
+          <div style="overflow-x: auto">
+            <table class="arrivals" id="arrivals-table"></table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- MODAL: FCM TOKEN -->
+    <div class="modal-backdrop" id="modal-fcm">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Register FCM token</div>
+            <p class="small muted">
+              In production, the token comes from Firebase. Here you can paste any string to exercise
+              <code>/api/users/register-token</code>.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <label for="reg-email">Email</label>
+        <input id="reg-email" placeholder="student@example.com" />
+
+        <label for="reg-token">FCM token</label>
+        <input id="reg-token" placeholder="fake-token-for-dev" />
+
+        <button id="btn-register">Register token</button>
+      </div>
+    </div>
+
+    <!-- MODAL: SUBSCRIPTIONS -->
+    <div class="modal-backdrop" id="modal-subscriptions">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Subscriptions</div>
+            <p class="small muted">
+              Create subscriptions to <code>stop_id</code> + <code>trip_id</code> and inspect what’s stored
+              in Mongo.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <!-- Create subscription -->
+        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
+        <label for="sub-email">Email</label>
+        <input id="sub-email" placeholder="student@example.com" />
+
+        <label for="sub-stop">Stop ID</label>
+        <input id="sub-stop" placeholder="IU:1" />
+
+        <label for="sub-trip">Trip ID</label>
+        <input id="sub-trip" placeholder="example-trip-id" />
+
+        <label for="sub-mins">Notify before (minutes)</label>
+        <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
+
+        <button id="btn-subscribe">Create / update subscription</button>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
+
+        <!-- View subscriptions -->
+        <h3 style="margin: 0 0 0.35rem; font-size: 0.9rem">Inspect</h3>
+        <label for="list-email">Email (optional)</label>
+        <input id="list-email" placeholder="student@example.com" />
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem">
+          <button id="btn-list-email" class="secondary">List by email</button>
+          <button id="btn-list-all" class="secondary">List all (max 200)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONSOLE -->
+    <div class="modal-backdrop" id="modal-console">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Console</div>
+            <p class="small muted">
+              Shows JSON responses and errors from the backend helper API calls.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.25rem">
+          <button id="btn-clear" class="secondary" style="margin-top: 0">
+            Clear
+          </button>
+        </div>
+        <pre id="output">Ready.</pre>
+      </div>
+    </div>
+
+    <!-- Leaflet JS for map -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <script>
+      const API_BASE = ''; // same origin
+
+      const $ = (id) => document.getElementById(id);
+      const out = $('output');
+      const arrivalsTable = $('arrivals-table');
+      const stopMeta = $('stop-meta');
+
+      let stopMap = null;
+      let stopMarker = null;
+      let routeLine = null;
+
+      // ------------ logging / helper fetch -------------
+
+      function log(msg, obj) {
+        const time = new Date().toLocaleTimeString();
+        let text = `[${time}] ${msg}`;
+        if (obj !== undefined) {
+          text += '\n' + JSON.stringify(obj, null, 2);
+        }
+        if (out) out.textContent = text + '\n\n' + (out.textContent || '');
+      }
+
+      async function callJson(path, options = {}) {
+        const url = API_BASE + path;
+        const opts = {
+          headers: { 'Content-Type': 'application/json' },
+          ...options,
+        };
+        if (opts.body && typeof opts.body !== 'string') {
+          opts.body = JSON.stringify(opts.body);
+        }
+        const res = await fetch(url, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw { status: res.status, data };
+        }
+        return data;
+      }
+
+      // ------------ map init -------------
+
+      // Default center = Illini Union-ish
+      const DEFAULT_CENTER = [40.1099, -88.2272];
+
+      function initMap() {
+        if (stopMap) return;
+
+        stopMap = L.map('stop-map').setView(DEFAULT_CENTER, 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors',
+        }).addTo(stopMap);
+
+        stopMarker = L.marker(DEFAULT_CENTER).addTo(stopMap);
+        stopMarker.bindPopup('<strong>Bus stop</strong><br>Waiting for stop info…');
+      }
+
+      // ------------ time helpers -------------
+
+      function parseMtdTimeToDate(now, timeStr) {
+        if (!timeStr) return null;
+        const parts = timeStr.split(':').map((x) => parseInt(x, 10));
+        if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return null;
+
+        let [h, m, s] = parts;
+        if (Number.isNaN(s)) s = 0;
+
+        const d = new Date(now);
+        if (h >= 24) {
+          h -= 24;
+          d.setDate(d.getDate() + 1);
+        }
+        d.setHours(h, m, s, 0);
+        return d;
+      }
+
+      // ------------ render arrivals -------------
+
+      function renderArrivals(stopId, data) {
+        arrivalsTable.innerHTML = '';
+        stopMeta.textContent = '';
+
+        if (!data || !Array.isArray(data.stop_times) || data.stop_times.length === 0) {
+          stopMeta.textContent = `No upcoming arrivals for stop ${stopId}.`;
+          return;
+        }
+
+        const now = new Date();
+        const rows = [];
+
+        for (const st of data.stop_times) {
+          const trip = st.trip || {};
+          const arrivalStr = st.arrival_time;
+          const arrivalDate = parseMtdTimeToDate(now, arrivalStr);
+          if (!arrivalDate) continue;
+
+          const diffMinFloat = (arrivalDate - now) / 60000;
+          const diffMin = Math.round(diffMinFloat);
+
+          if (diffMin < -5) continue; // skip far-past arrivals
+
+          rows.push({
+            route: trip.route_id || '-',
+            tripId: trip.trip_id || '-',
+            headsign: trip.trip_headsign || '',
+            arrivalStr,
+            diffMin,
+            arrivalDate,
+          });
+        }
+
+        if (!rows.length) {
+          stopMeta.textContent = `No upcoming arrivals for stop ${stopId}.`;
+          return;
+        }
+
+        rows.sort((a, b) => a.arrivalDate - b.arrivalDate);
+        const limited = rows.slice(0, 12);
+
+        const soonest = limited[0];
+        stopMeta.textContent = `Showing ${limited.length} upcoming arrivals for stop ${stopId}. Next bus in ${
+          soonest.diffMin >= 0 ? soonest.diffMin : '<1'
+        } min at ${soonest.arrivalStr}.`;
+
+        const header = `
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Trip</th>
+              <th>Headsign</th>
+              <th>Time</th>
+              <th>In</th>
+            </tr>
+          </thead>
+        `;
+        const bodyRows = limited
+          .map((r) => {
+            const diffLabel = r.diffMin > 0 ? `${r.diffMin} min` : 'now';
+            return `
+              <tr>
+                <td><span class="pill">${r.route}</span></td>
+                <td><span class="pill pill-soft">${r.tripId}</span></td>
+                <td>${r.headsign || '<span class="muted">—</span>'}</td>
+                <td>${r.arrivalStr}</td>
+                <td>${diffLabel}</td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        arrivalsTable.innerHTML = header + `<tbody>${bodyRows}</tbody>`;
+      }
+
+      // ------------ map render helpers -------------
+
+      function renderStopMap(stopInfo) {
+        if (!stopInfo) return;
+        initMap();
+
+        const lat = Number(stopInfo.stop_lat);
+        const lon = Number(stopInfo.stop_lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+        stopMap.setView([lat, lon], 16);
+        stopMarker.setLatLng([lat, lon]);
+
+        const name = stopInfo.stop_name || 'Bus stop';
+        const id = stopInfo.stop_id || '';
+        stopMarker.bindPopup(`<strong>${name}</strong><br>${id}`).openPopup();
+      }
+
+      function renderRoutePolyline(shapePoints, departureMeta) {
+        initMap();
+        if (!Array.isArray(shapePoints) || !shapePoints.length) return;
+
+        const latlngs = shapePoints
+          .map((p) => [Number(p.shape_pt_lat), Number(p.shape_pt_lon)])
+          .filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
+
+        if (!latlngs.length) return;
+
+        // Remove any previous line so we just show the current route
+        if (routeLine) {
+          stopMap.removeLayer(routeLine);
+          routeLine = null;
+        }
+
+        // Bright, high-contrast route line
+        routeLine = L.polyline(latlngs, {
+          weight: 6,
+          opacity: 0.95,
+          color: '#22c55e',        // bright green
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(stopMap);
+
+        if (departureMeta) {
+          const label = `${departureMeta.routeShort || departureMeta.routeId || ''} ${
+            departureMeta.headsign || ''
+          }`.trim();
+          log('Drew route polyline', {
+            stop: departureMeta.stopId,
+            route: label,
+            shape_id: departureMeta.shapeId,
+          });
+        }
+
+        // Zoom the map to fit the whole route nicely
+        stopMap.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+      }
+
+      async function fetchAndRenderRouteForStop(stopId) {
+        try {
+          const deps = await callJson(`/api/mtd/departures?stop_id=${encodeURIComponent(stopId)}`);
+          const list = deps.departures || deps.departure || [];
+          if (!Array.isArray(list) || !list.length) {
+            log('No live departures available for route mapping at this stop');
+            return;
+          }
+
+          const d = list.find((x) => x.shape_id) || list[0];
+          if (!d.shape_id) {
+            log('No shape_id on departures; cannot map route.');
+            return;
+          }
+
+          const shapeResp = await callJson(
+            `/api/mtd/shape?shape_id=${encodeURIComponent(d.shape_id)}`
+          );
+          const points = shapeResp.shapes || shapeResp.shape || shapeResp || [];
+          const meta = {
+            shapeId: d.shape_id,
+            stopId: stopId,
+            headsign: d.headsign || (d.trip && d.trip.trip_headsign) || '',
+            routeShort:
+              (d.route && (d.route.route_short_name || d.route.route_id)) ||
+              (d.trip && d.trip.route_id) ||
+              '',
+            routeId: (d.route && d.route.route_id) || (d.trip && d.trip.route_id) || '',
+          };
+
+          renderRoutePolyline(points, meta);
+        } catch (err) {
+          log('Error fetching route shape for stop', { stopId, err });
+        }
+      }
+
+      // ------------ event handlers -------------
+
+      $('btn-register').addEventListener('click', async () => {
+        const email = $('reg-email').value.trim();
+        const fcmToken = $('reg-token').value.trim();
+        if (!email || !fcmToken) {
+          alert('Email and token are required');
+          return;
+        }
+        try {
+          log('POST /api/users/register-token', { email, fcmToken });
+          const data = await callJson('/api/users/register-token', {
+            method: 'POST',
+            body: { email, fcmToken },
+          });
+          log('Success: token registered', data);
+        } catch (err) {
+          log('Error registering token', err);
+        }
+      });
+
+      $('btn-subscribe').addEventListener('click', async () => {
+        const email = $('sub-email').value.trim();
+        const stop_id = $('sub-stop').value.trim();
+        const trip_id = $('sub-trip').value.trim();
+        const minsRaw = $('sub-mins').value.trim();
+        if (!email || !stop_id || !trip_id) {
+          alert('Email, stop ID, and trip ID are required');
+          return;
+        }
+        const body = { email, stop_id, trip_id };
+        if (minsRaw !== '') body.notifyBeforeMinutes = Number(minsRaw);
+        try {
+          log('POST /api/subscriptions', body);
+          const data = await callJson('/api/subscriptions', {
+            method: 'POST',
+            body,
+          });
+          log('Success: subscription upserted', data);
+        } catch (err) {
+          log('Error creating subscription', err);
+        }
+      });
+
+      $('btn-list-email').addEventListener('click', async () => {
+        const email = $('list-email').value.trim();
+        if (!email) {
+          alert('Enter an email to list subscriptions for');
+          return;
+        }
+        const path = `/api/subscriptions/by-email/${encodeURIComponent(email)}`;
+        try {
+          log(`GET ${path}`);
+          const data = await callJson(path);
+          log('Subscriptions for email', data);
+        } catch (err) {
+          log('Error listing subscriptions by email', err);
+        }
+      });
+
+      $('btn-list-all').addEventListener('click', async () => {
+        try {
+          log('GET /api/subscriptions');
+          const data = await callJson('/api/subscriptions');
+          log('All subscriptions (limited)', data);
+        } catch (err) {
+          log('Error listing all subscriptions', err);
+        }
+      });
+
+      $('btn-stop-times').addEventListener('click', async () => {
+        const stopId = $('stop-id').value.trim();
+        if (!stopId) {
+          alert('Enter a stop ID');
+          return;
+        }
+
+        try {
+          log(`GET /api/mtd/stop-times?stop_id=${stopId}`);
+          const data = await callJson(`/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`);
+          log('MTD stop times raw response', data);
+          renderArrivals(stopId, data);
+
+          try {
+            const stopInfo = await callJson(
+              `/api/mtd/stop-info?stop_id=${encodeURIComponent(stopId)}`
+            );
+            renderStopMap(stopInfo);
+            log('Updated map for stop', stopInfo);
+          } catch (mapErr) {
+            log('Error loading stop info for map', mapErr);
+          }
+
+          await fetchAndRenderRouteForStop(stopId);
+        } catch (err) {
+          log('Error fetching stop times', err);
+          arrivalsTable.innerHTML = '';
+          stopMeta.textContent = 'Failed to load arrivals.';
+        }
+      });
+
+      $('btn-clear').addEventListener('click', () => {
+        if (out) out.textContent = 'Cleared.\n';
+      });
+
+      // ------------ modal wiring -------------
+
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('open');
+      }
+
+      function closeModal(el) {
+        el.classList.remove('open');
+      }
+
+      document.querySelectorAll('[data-modal-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-modal-target');
+          if (id) openModal(id);
+        });
+      });
+
+      document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+        backdrop.addEventListener('click', (e) => {
+          if (e.target === backdrop) closeModal(backdrop);
+        });
+        backdrop.querySelectorAll('[data-modal-close]').forEach((btn) => {
+          btn.addEventListener('click', () => closeModal(backdrop));
+        });
+      });
+
+      // Initialize map once DOM is ready
+      document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+  </body>
+</html>
