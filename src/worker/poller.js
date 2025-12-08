@@ -34,7 +34,7 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
 
       await Promise.all(Object.keys(groupsByStop).map(async (stopId) => {
         try {
-          const url = `https://developer.mtd.org/api/2.2/json/getstoptimesbystop?key=${encodeURIComponent(mtdKey)}&stop_id=${encodeURIComponent(stopId)}&date=${dateParam}`;
+          const url = `https://developer.cumtd.com/api/v2.2/json/getstoptimesbystop?key=${encodeURIComponent(mtdKey)}&stop_id=${encodeURIComponent(stopId)}&date=${dateParam}`;
           const resp = await axios.get(url, { timeout: 10000 });
           const data = resp.data;
           const stopTimes = data.stop_times || [];

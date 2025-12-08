@@ -674,6 +674,16 @@
       $('btn-register').addEventListener('click', async () => {
         const email = $('reg-email').value.trim();
         const fcmToken = $('reg-token').value.trim();
+        if(!fcmToken) {
+          Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+              // In a real app, you would get the token from Firebase here.
+              alert('In production, the FCM token would be obtained from Firebase SDK.');
+            } else {
+              alert('Notification permission denied. Cannot obtain FCM token.');
+            }
+          });
+        }
         if (!email || !fcmToken) {
           alert('Email and token are required');
           return;
