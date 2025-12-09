@@ -29,8 +29,13 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
         return acc;
       }, {});
 
-      const today = new Date();
-      const dateParam = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+      // Get current date in CST
+      const todayCST = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })
+      );
+      
+      const dateParam = `${todayCST.getFullYear()}${String(todayCST.getMonth() + 1).padStart(2, '0')}${String(todayCST.getDate()).padStart(2, '0')}`;
+
 
       await Promise.all(Object.keys(groupsByStop).map(async (stopId) => {
         try {
