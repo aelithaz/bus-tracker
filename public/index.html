@@ -395,39 +395,53 @@
           <div>
             <div class="modal-title">Subscriptions</div>
             <p class="small muted">
-              Create subscriptions to <code>stop_id</code> + <code>trip_id</code> and inspect what’s stored
-              in Mongo.
+              View your own subscriptions, then add new ones if needed.
             </p>
           </div>
           <button class="modal-close" data-modal-close>&times;</button>
         </div>
 
-        <!-- Create subscription -->
-        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
-        <label for="sub-email">Email</label>
-        <input id="sub-email" placeholder="student@example.com" />
+        <!-- My subscriptions (default view) -->
+        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">My subscriptions</h3>
+        <p class="small muted" style="margin-top: 0">
+          Uses the email you’re logged in with. You can override it below.
+        </p>
 
-        <label for="sub-stop">Stop ID</label>
-        <input id="sub-stop" placeholder="IU:1" />
-
-        <label for="sub-trip">Trip ID</label>
-        <input id="sub-trip" placeholder="example-trip-id" />
-
-        <label for="sub-mins">Notify before (minutes)</label>
-        <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
-
-        <button id="btn-subscribe">Create / update subscription</button>
-
-        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
-
-        <!-- View subscriptions -->
-        <h3 style="margin: 0 0 0.35rem; font-size: 0.9rem">Inspect</h3>
-        <label for="list-email">Email (optional)</label>
+        <label for="list-email">Email</label>
         <input id="list-email" placeholder="student@example.com" />
 
         <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem">
-          <button id="btn-list-email" class="secondary">List by email</button>
+          <button id="btn-subs-refresh" class="secondary">Refresh my subscriptions</button>
           <button id="btn-list-all" class="secondary dev-only">List all (max 200)</button>
+        </div>
+
+        <div id="subs-list" class="small muted" style="margin-top: 0.5rem">
+          Login to see your subscriptions.
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
+
+        <!-- Create subscription (hidden until clicked) -->
+        <button id="btn-show-create-sub" class="secondary" style="margin-top: 0">
+          Create / update subscription
+        </button>
+
+        <div id="sub-create-block" style="margin-top: 0.5rem; display: none">
+          <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
+          <label for="sub-email">Email</label>
+          <input id="sub-email" placeholder="student@example.com" />
+
+          <label for="sub-stop">Stop ID</label>
+          <input id="sub-stop" placeholder="IU:1" />
+
+          <label for="sub-trip">Trip ID</label>
+          <input id="sub-trip" placeholder="example-trip-id" />
+
+          <label for="sub-mins">Notify before (minutes)</label>
+          <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
+
+          <button id="btn-subscribe">Create / update subscription</button>
+          <button id="btn-sub-cancel" class="secondary" style="margin-top:.25rem">Cancel</button>
         </div>
       </div>
     </div>
@@ -611,6 +625,95 @@
         }
       }
 
+      // ---------- subscriptions list helpers ----------
+
+      function renderSubsList(email, payload) {
+        const container = $('subs-list');
+        if (!container) return;
+
+        if (!email) {
+          container.textContent = 'Login first to see your subscriptions.';
+          return;
+        }
+
+        const subs = payload && Array.isArray(payload.subs) ? payload.subs : [];
+        if (!subs.length) {
+          container.textContent = `No subscriptions for ${email}.`;
+          return;
+        }
+
+        const rows = subs
+          .map(
+            (s) => `
+              <li data-sub-id="${s._id || ''}">
+                stop <code>${s.stop_id}</code>,
+                trip <code>${s.trip_id}</code>${
+                  s.notifyBeforeMinutes != null
+                    ? ` (notify ${s.notifyBeforeMinutes} min before)`
+                    : ''
+                }
+                <button
+                  type="button"
+                  class="secondary small unsub-sub-btn"
+                  data-sub-id="${s._id || ''}"
+                  style="padding:0 0.5rem;font-size:0.7rem;margin-left:0.4rem"
+                >
+                  Unsubscribe
+                </button>
+              </li>
+            `
+          )
+          .join('');
+
+        container.innerHTML = `<ul style="padding-left:1.1rem;margin:0.2rem 0 0">${rows}</ul>`;
+
+        container.querySelectorAll('.unsub-sub-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const subId = btn.getAttribute('data-sub-id');
+            if (!subId) return;
+            const path = `/api/subscriptions/${encodeURIComponent(subId)}`;
+            try {
+              log(`DELETE ${path}`, { email });
+              await callJson(path, { method: 'DELETE' });
+              await loadMySubscriptions();
+            } catch (err) {
+              log('Error unsubscribing', err);
+              alert('Failed to unsubscribe (see console modal).');
+            }
+          });
+        });
+      }
+
+      async function loadMySubscriptions() {
+        const container = $('subs-list');
+        const email =
+          currentEmail ||
+          ($('list-email') && $('list-email').value.trim());
+        if (!container) return;
+
+        if (!email) {
+          container.textContent = 'Login first to see your subscriptions.';
+          return;
+        }
+
+        if ($('list-email')) {
+          $('list-email').value = email;
+        }
+
+        try {
+          const path = `/api/subscriptions/by-email/${encodeURIComponent(
+            email
+          )}`;
+          log(`GET ${path}`);
+          const data = await callJson(path);
+          log('Subscriptions for email', data);
+          renderSubsList(email, data);
+        } catch (err) {
+          log('Error loading my subscriptions', err);
+          container.textContent = 'Failed to load subscriptions.';
+        }
+      }
+
       // ------------ logging / helper fetch -------------
       function log(msg, obj) {
         const time = new Date().toLocaleTimeString();
@@ -783,6 +886,10 @@
                 });
                 log('Subscribed to trip', data);
                 alert(`Subscribed ${currentEmail} to ${stop_id} / ${trip_id}`);
+                // refresh list if subscriptions modal is open
+                if (document.getElementById('modal-subscriptions')?.classList.contains('open')) {
+                  loadMySubscriptions();
+                }
               } catch (err) {
                 log('Error subscribing from trip button', err);
                 alert('Failed to subscribe (see console modal)');
@@ -996,10 +1103,28 @@
             body
           });
           log('Success: subscription upserted', data);
+          // Refresh "My subscriptions" if modal is open
+          if (document.getElementById('modal-subscriptions')?.classList.contains('open')) {
+            loadMySubscriptions();
+          }
         } catch (err) {
           log('Error creating subscription', err);
         }
       });
+
+      // cancel create/update subscription panel
+      (() => {
+        const block = $('sub-create-block');
+        const btn = $('btn-sub-cancel');
+        const trigger = $('btn-show-create-sub'); // the button that opens the panel
+
+        if (btn && block && trigger) {
+          btn.addEventListener('click', () => {
+            block.style.display = 'none';                 // hide mini popup
+            trigger.style.display = 'inline-flex';        // show main button again
+          });
+        }
+      })();
 
       $('btn-save-favorite').addEventListener('click', async () => {
         const stopInput = $('stop-id');
@@ -1042,31 +1167,19 @@
         }
       });
 
-      $('btn-list-email').addEventListener('click', async () => {
-        const email = $('list-email').value.trim() || currentEmail;
-        if (!email) {
-          alert('Enter an email to list subscriptions for');
-          return;
-        }
-        const path = `/api/subscriptions/by-email/${encodeURIComponent(email)}`;
-        try {
-          log(`GET ${path}`);
-          const data = await callJson(path);
-          log('Subscriptions for email', data);
-        } catch (err) {
-          log('Error listing subscriptions by email', err);
-        }
-      });
-
-      $('btn-list-all').addEventListener('click', async () => {
-        try {
-          log('GET /api/subscriptions');
-          const data = await callJson('/api/subscriptions');
-          log('All subscriptions (limited)', data);
-        } catch (err) {
-          log('Error listing all subscriptions', err);
-        }
-      });
+      // optional dev-only: list all subs
+      const btnListAll = $('btn-list-all');
+      if (btnListAll) {
+        btnListAll.addEventListener('click', async () => {
+          try {
+            log('GET /api/subscriptions');
+            const data = await callJson('/api/subscriptions');
+            log('All subscriptions (limited)', data);
+          } catch (err) {
+            log('Error listing all subscriptions', err);
+          }
+        });
+      }
 
       $('btn-stop-times').addEventListener('click', async () => {
         const stopId = $('stop-id').value.trim();
@@ -1105,6 +1218,23 @@
         if (out) out.textContent = 'Cleared.\n';
       });
 
+      // subscriptions: refresh + toggle create block
+      const btnSubsRefresh = $('btn-subs-refresh');
+      if (btnSubsRefresh) {
+        btnSubsRefresh.addEventListener('click', () => {
+          loadMySubscriptions();
+        });
+      }
+
+      const showCreateBtn = $('btn-show-create-sub');
+      const subCreateBlock = $('sub-create-block');
+      if (showCreateBtn && subCreateBlock) {
+        showCreateBtn.addEventListener('click', () => {
+          subCreateBlock.style.display = 'block';
+          showCreateBtn.style.display = 'none'; // hide the top button once opened
+        });
+      }
+
       // ------------ modal wiring -------------
       function openModal(id) {
         const el = document.getElementById(id);
@@ -1118,7 +1248,11 @@
       document.querySelectorAll('[data-modal-target]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-modal-target');
-          if (id) openModal(id);
+          if (!id) return;
+          openModal(id);
+          if (id === 'modal-subscriptions') {
+            loadMySubscriptions();
+          }
         });
       });
 
