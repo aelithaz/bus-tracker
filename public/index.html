@@ -273,6 +273,10 @@
         </div>
 
         <div class="nav-buttons">
+          <button class="nav-button" data-modal-target="modal-auth">
+            <span class="icon">👤</span>
+            Login
+          </button>
           <button class="nav-button" data-modal-target="modal-fcm">
             <span class="icon">🔒</span>
             FCM token
@@ -321,6 +325,32 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <!-- MODAL: AUTH -->
+    <div class="modal-backdrop" id="modal-auth">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Login / register</div>
+            <p class="small muted">
+              Basic email + password. On success, the email is reused for tokens and subscriptions.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <label for="auth-email">Email</label>
+        <input id="auth-email" placeholder="student@example.com" />
+
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" />
+
+        <div style="display:flex; gap:0.5rem; margin-top:0.25rem">
+          <button id="btn-auth-login">Login</button>
+          <button id="btn-auth-register" class="secondary">Register</button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL: FCM TOKEN -->
@@ -453,6 +483,17 @@
       let stopMap = null;
       let stopMarker = null;
       let routeLine = null;
+      let currentEmail = '';
+
+      function setCurrentEmail(email) {
+        currentEmail = email || '';
+        const ids = ['auth-email', 'reg-email', 'sub-email', 'list-email'];
+        ids.forEach((id) => {
+          const el = $(id);
+          if (el && !el.value) el.value = currentEmail;
+        });
+        if (currentEmail) log('Current user', { email: currentEmail });
+      }
 
       // ------------ logging / helper fetch -------------
 
@@ -692,9 +733,53 @@
       }
 
       // ------------ event handlers -------------
+      
+      $('btn-auth-register').addEventListener('click', async () => {
+        const email = $('auth-email').value.trim();
+        const password = $('auth-password').value.trim();
+        if (!email || !password) {
+          alert('Email and password are required');
+          return;
+        }
+        try {
+          log('POST /api/users/register', { email });
+          const data = await callJson('/api/users/register', {
+            method: 'POST',
+            body: { email, password },
+          });
+          log('Registered user', data);
+          setCurrentEmail(email);
+          alert('Registered successfully');
+        } catch (err) {
+          log('Error registering user', err);
+          alert('Register failed (see console modal)');
+        }
+      });
+
+      $('btn-auth-login').addEventListener('click', async () => {
+        const email = $('auth-email').value.trim();
+        const password = $('auth-password').value.trim();
+        if (!email || !password) {
+          alert('Email and password are required');
+          return;
+        }
+        try {
+          log('POST /api/users/login', { email });
+          const data = await callJson('/api/users/login', {
+            method: 'POST',
+            body: { email, password },
+          });
+          log('Login ok', data);
+          setCurrentEmail(email);
+          alert('Login successful');
+        } catch (err) {
+          log('Error logging in', err);
+          alert('Login failed (see console modal)');
+        }
+      });
 
       $('btn-register').addEventListener('click', async () => {
-        const email = $('reg-email').value.trim();
+        const email = $('reg-email').value.trim() || currentEmail;
         let fcmToken = $('reg-token').value.trim();
         if(!fcmToken) {
           Notification.requestPermission().then((permission) => {
@@ -734,7 +819,7 @@
       });
 
       $('btn-subscribe').addEventListener('click', async () => {
-        const email = $('sub-email').value.trim();
+        const email = $('sub-email').value.trim() || currentEmail;
         const stop_id = $('sub-stop').value.trim();
         const trip_id = $('sub-trip').value.trim();
         const minsRaw = $('sub-mins').value.trim();
@@ -757,7 +842,7 @@
       });
 
       $('btn-list-email').addEventListener('click', async () => {
-        const email = $('list-email').value.trim();
+        const email = $('list-email').value.trim() || currentEmail;
         if (!email) {
           alert('Enter an email to list subscriptions for');
           return;
