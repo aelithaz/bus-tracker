@@ -419,7 +419,29 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script type = "module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
+      import { getMessaging, onMessage, getToken } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js';
+      const firebaseConfig = {
+                apiKey: "AIzaSyBgm7o5xc5y5NM1A1UPZQ3UFtyFjhcvlgI",
+                authDomain: "bus-tracker-8fd55.firebaseapp.com",
+                projectId: "bus-tracker-8fd55",
+                storageBucket: "bus-tracker-8fd55.firebasestorage.app",
+                messagingSenderId: "767373776472",
+                appId: "1:767373776472:web:0d65379796f1decd749c2d",
+                measurementId: "G-892K9T6PET"
+              };
+      const app = initializeApp(firebaseConfig);
 
+      const messaging = getMessaging(app);
+      window.messaging = messaging;
+      window.getToken = getToken;
+      onMessage(messaging, (payload) => {
+            console.log('Message received. ', payload);
+            alert('New message: ' + payload.notification.title);
+            // Customize how you handle the message here
+        });
+    </script>
     <script>
       const API_BASE = ''; // same origin
 
@@ -673,7 +695,28 @@
 
       $('btn-register').addEventListener('click', async () => {
         const email = $('reg-email').value.trim();
-        const fcmToken = $('reg-token').value.trim();
+        let fcmToken = $('reg-token').value.trim();
+        if(!fcmToken) {
+          Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+              const messaging = window.messaging
+              const currentToken = window.getToken(messaging, { vapidKey: 'BATbmublcxZvBHWXNSZf590-nWwZal5yBFnoCQEVuEQWkyFlQ7wYAMMjqF88LS7gEXn9_EmVWoVnvCbi3r6ywjg'}).then((currentToken) => {
+                if (currentToken) {
+                  log('Obtained FCM token from Firebase', currentToken);
+                  $('reg-token').value = currentToken;
+                  fcmToken = currentToken;
+                } else {
+                  alert('No registration token available. Request permission to generate one.');
+                }
+              }).catch((err) => {
+                log('An error occurred while retrieving token. ', err);
+              });
+
+            } else {
+              alert('Notification permission denied. Cannot obtain FCM token.');
+            }
+          });
+        }
         if (!email || !fcmToken) {
           alert('Email and token are required');
           return;
