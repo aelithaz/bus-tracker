@@ -51,7 +51,7 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
             for (const st of matching) {
               const arrival = st.arrival_time;
               const arrivalDate = parseTimeStringToDate(today, arrival);
-              const now = new Date();
+              const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
               const diffMs = arrivalDate - now;
               const diffMin = diffMs / (60*1000);
               console.log(`Poller: sub ${sub.email} trip ${sub.trip_id} stop ${sub.stop_id} arrival ${arrival} in ${diffMin.toFixed(1)} min`);
