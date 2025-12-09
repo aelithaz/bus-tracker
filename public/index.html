@@ -283,6 +283,10 @@
             <span class="icon">👤</span>
             Login
           </button>
+          <button class="nav-button" id="btn-logout" style="display:none">
+            <span class="icon">🚪</span>
+            Logout
+          </button>
           <button class="nav-button" data-modal-target="modal-fcm">
             <span class="icon">🔒</span>
             FCM token
@@ -601,11 +605,25 @@
 
       function setCurrentEmail(email) {
         currentEmail = email || '';
+
+        const loginBtn = document.querySelector('[data-modal-target="modal-auth"]');
+        const logoutBtn = $('btn-logout');
+        if (logoutBtn && loginBtn) {
+          if (currentEmail) {
+            logoutBtn.style.display = 'inline-flex';
+            loginBtn.style.display = 'none';
+          } else {
+            logoutBtn.style.display = 'none';
+            loginBtn.style.display = 'inline-flex';
+          }
+        }
+
         const ids = ['auth-email', 'reg-email', 'sub-email', 'list-email'];
         ids.forEach((id) => {
           const el = $(id);
           if (el && !el.value) el.value = currentEmail;
         });
+
         updateDevUI();
 
         if (currentEmail) {
@@ -1034,6 +1052,15 @@
           log('Error logging in', err);
           alert('Login failed (see console modal)');
         }
+      });
+
+      $('btn-logout').addEventListener('click', () => {
+        currentEmail = '';
+        favorites = [];
+        renderFavorites();
+        setCurrentEmail('');
+        log('Logged out');
+        alert('Logged out');
       });
 
       $('btn-register').addEventListener('click', async () => {
