@@ -22,9 +22,6 @@ app.get('/health', (req, res) => res.send('bus-tracker backend running'));
 
 app.use('/api/users', usersRouter);
 app.use('/api/subscriptions', subsRouter);
-
-app.get('/', (req, res) => res.send('bus-tracker backend running'));
-
 const PORT = process.env.PORT || 3000;
 
 async function init() {

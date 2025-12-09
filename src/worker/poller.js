@@ -49,7 +49,7 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
               const now = new Date();
               const diffMs = arrivalDate - now;
               const diffMin = diffMs / (60*1000);
-
+              console.log(`Poller: sub ${sub.email} trip ${sub.trip_id} stop ${sub.stop_id} arrival ${arrival} in ${diffMin.toFixed(1)} min`);
               // only notify for upcoming arrivals within the subscription's window
               const windowMinutes = (typeof sub.notifyBeforeMinutes === 'number' && sub.notifyBeforeMinutes >= 0) ? sub.notifyBeforeMinutes : notifyWindowMinutes;
               if (diffMin >= 0 && diffMin <= windowMinutes) {
@@ -59,6 +59,7 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
                   const user = await User.findOne({ email: sub.email });
                   if (user && user.fcmTokens && user.fcmTokens.length) {
                     const payload = {
+                      tokens : user.fcmTokens,
                       notification: {
                         title: 'Bus arriving soon',
                         body: `Your trip ${sub.trip_id} is arriving at stop ${sub.stop_id} at ${arrival} (${Math.round(diffMin)} min)`
@@ -67,7 +68,7 @@ module.exports = function makePoller({ mtdKey, firebaseAdmin, intervalMs = 60_00
                     };
 
                     try {
-                      await firebaseAdmin.messaging().sendToDevice(user.fcmTokens, payload);
+                      await firebaseAdmin.messaging().sendEachForMulticast(payload);
                       console.log(`Notified ${sub.email} for ${sub.trip_id} @ ${sub.stop_id} (${arrival})`);
                       sub.lastNotifiedFor = key;
                       await sub.save();

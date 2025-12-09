@@ -5,7 +5,7 @@ const axios = require('axios');
 const router = express.Router();
 
 // NOTE: version is v2.2 (with a "v")
-const BASE = 'https://developer.mtd.org/api/v2.2/json';
+const BASE = 'https://developer.cumtd.com/api/v2.2/json';
 const MTD_KEY = process.env.MTD_API_KEY;
 
 if (!MTD_KEY) {
@@ -128,7 +128,7 @@ router.get('/stop-times', async (req, res) => {
 
     return res.json(data);
   } catch (err) {
-    console.error('mtd /stop-times error', err.message || err);
+    console.error('mtd /stop-times error', req.query || err.message || err);
     return res.status(500).json({ error: 'mtd-stop-times-failed' });
   }
 });
