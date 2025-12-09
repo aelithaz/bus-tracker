@@ -16,12 +16,10 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api/users', usersRouter);
 app.use('/api/subscriptions', subsRouter);
-+ app.use('/api/mtd', mtdRouter);
+app.use('/api/mtd', mtdRouter);
 
 app.get('/health', (req, res) => res.send('bus-tracker backend running'));
 
-app.use('/api/users', usersRouter);
-app.use('/api/subscriptions', subsRouter);
 const PORT = process.env.PORT || 3000;
 
 async function init() {

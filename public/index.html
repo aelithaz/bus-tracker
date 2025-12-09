@@ -85,6 +85,12 @@
       .nav-button:hover {
         background: #111827;
       }
+      .dev-only {
+        display: none;
+      }
+      .dev-only.dev-show {
+        display: inline-flex;
+      }
 
       /* MAIN LAYOUT */
 
@@ -273,6 +279,14 @@
         </div>
 
         <div class="nav-buttons">
+          <button class="nav-button" data-modal-target="modal-auth">
+            <span class="icon">👤</span>
+            Login
+          </button>
+          <button class="nav-button" id="btn-logout" style="display:none">
+            <span class="icon">🚪</span>
+            Logout
+          </button>
           <button class="nav-button" data-modal-target="modal-fcm">
             <span class="icon">🔒</span>
             FCM token
@@ -281,7 +295,7 @@
             <span class="icon">📋</span>
             Subscriptions
           </button>
-          <button class="nav-button" data-modal-target="modal-console">
+          <button class="nav-button dev-only" data-modal-target="modal-console">
             <span class="icon">🧪</span>
             Console
           </button>
@@ -312,7 +326,12 @@
           <label for="stop-id">Stop ID</label>
           <input id="stop-id" placeholder="IU:1" />
 
-          <button id="btn-stop-times">Fetch arrivals & route</button>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; margin-top: 0.25rem">
+            <button id="btn-stop-times">Fetch arrivals & route</button>
+            <button id="btn-save-favorite" class="secondary">Save as favorite</button>
+          </div>
+
+          <div id="favorites-container" class="small muted" style="margin-top: 0.25rem"></div>
 
           <div id="stop-meta" class="small muted" style="margin-top: 0.5rem"></div>
 
@@ -321,6 +340,32 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <!-- MODAL: AUTH -->
+    <div class="modal-backdrop" id="modal-auth">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Login / register</div>
+            <p class="small muted">
+              Basic email + password. On success, the email is reused for tokens and subscriptions.
+            </p>
+          </div>
+          <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+
+        <label for="auth-email">Email</label>
+        <input id="auth-email" placeholder="student@example.com" />
+
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" />
+
+        <div style="display:flex; gap:0.5rem; margin-top:0.25rem">
+          <button id="btn-auth-login">Login</button>
+          <button id="btn-auth-register" class="secondary">Register</button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL: FCM TOKEN -->
@@ -354,39 +399,53 @@
           <div>
             <div class="modal-title">Subscriptions</div>
             <p class="small muted">
-              Create subscriptions to <code>stop_id</code> + <code>trip_id</code> and inspect what’s stored
-              in Mongo.
+              View your own subscriptions, then add new ones if needed.
             </p>
           </div>
           <button class="modal-close" data-modal-close>&times;</button>
         </div>
 
-        <!-- Create subscription -->
-        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
-        <label for="sub-email">Email</label>
-        <input id="sub-email" placeholder="student@example.com" />
+        <!-- My subscriptions (default view) -->
+        <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">My subscriptions</h3>
+        <p class="small muted" style="margin-top: 0">
+          Uses the email you’re logged in with. You can override it below.
+        </p>
 
-        <label for="sub-stop">Stop ID</label>
-        <input id="sub-stop" placeholder="IU:1" />
-
-        <label for="sub-trip">Trip ID</label>
-        <input id="sub-trip" placeholder="example-trip-id" />
-
-        <label for="sub-mins">Notify before (minutes)</label>
-        <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
-
-        <button id="btn-subscribe">Create / update subscription</button>
-
-        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
-
-        <!-- View subscriptions -->
-        <h3 style="margin: 0 0 0.35rem; font-size: 0.9rem">Inspect</h3>
-        <label for="list-email">Email (optional)</label>
+        <label for="list-email">Email</label>
         <input id="list-email" placeholder="student@example.com" />
 
         <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem">
-          <button id="btn-list-email" class="secondary">List by email</button>
-          <button id="btn-list-all" class="secondary">List all (max 200)</button>
+          <button id="btn-subs-refresh" class="secondary">Refresh my subscriptions</button>
+          <button id="btn-list-all" class="secondary dev-only">List all (max 200)</button>
+        </div>
+
+        <div id="subs-list" class="small muted" style="margin-top: 0.5rem">
+          Login to see your subscriptions.
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.75rem 0" />
+
+        <!-- Create subscription (hidden until clicked) -->
+        <button id="btn-show-create-sub" class="secondary" style="margin-top: 0">
+          Create / update subscription
+        </button>
+
+        <div id="sub-create-block" style="margin-top: 0.5rem; display: none">
+          <h3 style="margin: 0.25rem 0 0.35rem; font-size: 0.9rem">Create / update</h3>
+          <label for="sub-email">Email</label>
+          <input id="sub-email" placeholder="student@example.com" />
+
+          <label for="sub-stop">Stop ID</label>
+          <input id="sub-stop" placeholder="IU:1" />
+
+          <label for="sub-trip">Trip ID</label>
+          <input id="sub-trip" placeholder="example-trip-id" />
+
+          <label for="sub-mins">Notify before (minutes)</label>
+          <input id="sub-mins" type="number" min="0" placeholder="5 (optional)" />
+
+          <button id="btn-subscribe">Create / update subscription</button>
+          <button id="btn-sub-cancel" class="secondary" style="margin-top:.25rem">Cancel</button>
         </div>
       </div>
     </div>
@@ -419,31 +478,35 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script type = "module">
+    <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
-      import { getMessaging, onMessage, getToken } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js';
+      import {
+        getMessaging,
+        onMessage,
+        getToken
+      } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js';
       const firebaseConfig = {
-                apiKey: "AIzaSyBgm7o5xc5y5NM1A1UPZQ3UFtyFjhcvlgI",
-                authDomain: "bus-tracker-8fd55.firebaseapp.com",
-                projectId: "bus-tracker-8fd55",
-                storageBucket: "bus-tracker-8fd55.firebasestorage.app",
-                messagingSenderId: "767373776472",
-                appId: "1:767373776472:web:0d65379796f1decd749c2d",
-                measurementId: "G-892K9T6PET"
-              };
+        apiKey: 'AIzaSyBgm7o5xc5y5NM1A1UPZQ3UFtyFjhcvlgI',
+        authDomain: 'bus-tracker-8fd55.firebaseapp.com',
+        projectId: 'bus-tracker-8fd55',
+        storageBucket: 'bus-tracker-8fd55.firebasestorage.app',
+        messagingSenderId: '767373776472',
+        appId: '1:767373776472:web:0d65379796f1decd749c2d',
+        measurementId: 'G-892K9T6PET'
+      };
       const app = initializeApp(firebaseConfig);
 
       const messaging = getMessaging(app);
       window.messaging = messaging;
       window.getToken = getToken;
       onMessage(messaging, (payload) => {
-            console.log('Message received. ', payload);
-            alert('New message: ' + payload.notification.title);
-            // Customize how you handle the message here
-        });
+        console.log('Message received. ', payload);
+        alert('New message: ' + payload.notification.title);
+      });
     </script>
     <script>
       const API_BASE = ''; // same origin
+      const DEV_EMAIL = 'dev@example.com';
 
       const $ = (id) => document.getElementById(id);
       const out = $('output');
@@ -454,8 +517,222 @@
       let stopMarker = null;
       let routeLine = null;
 
-      // ------------ logging / helper fetch -------------
+      let currentEmail = '';
+      let favorites = [];
 
+      function updateDevUI() {
+        const isDev =
+          currentEmail &&
+          currentEmail.toLowerCase() === DEV_EMAIL.toLowerCase();
+        document.querySelectorAll('.dev-only').forEach((el) => {
+          if (isDev) el.classList.add('dev-show');
+          else el.classList.remove('dev-show');
+        });
+      }
+
+      function renderFavorites() {
+        const container = $('favorites-container');
+        if (!container) return;
+
+        if (!currentEmail) {
+          favorites = [];
+          container.textContent = 'Login to save favorite stops.';
+          return;
+        }
+
+        if (!favorites.length) {
+          container.textContent = 'No favorite stops yet.';
+          return;
+        }
+
+        container.innerHTML = favorites
+          .map(
+            (id) => `
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;margin-right:0.25rem">
+                <button
+                  type="button"
+                  class="secondary pill-soft fav-go-btn"
+                  data-stop="${id}"
+                >
+                  ★ ${id}
+                </button>
+                <button
+                  type="button"
+                  class="secondary"
+                  data-remove-stop="${id}"
+                  style="padding:0 0.4rem;font-size:0.7rem"
+                >
+                  ×
+                </button>
+              </span>
+            `
+          )
+          .join(' ');
+
+        // click star => jump to that stop and fetch arrivals
+        container.querySelectorAll('.fav-go-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const stopId = btn.getAttribute('data-stop');
+            const stopInput = $('stop-id');
+            if (stopInput && stopId) {
+              stopInput.value = stopId;
+              const fetchBtn = $('btn-stop-times');
+              if (fetchBtn) fetchBtn.click();
+            }
+          });
+        });
+
+        // click × => remove from favorites
+        container.querySelectorAll('button[data-remove-stop]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const stopId = btn.getAttribute('data-remove-stop');
+            if (!currentEmail || !stopId) return;
+            try {
+              const body = { email: currentEmail, stop_id: stopId };
+              log('POST /api/users/favorites/remove', body);
+              const data = await callJson('/api/users/favorites/remove', {
+                method: 'POST',
+                body
+              });
+              favorites = Array.isArray(data.favorites) ? data.favorites : [];
+              renderFavorites();
+            } catch (err) {
+              log('Error removing favorite', err);
+            }
+          });
+        });
+      }
+
+      function setCurrentEmail(email) {
+        currentEmail = email || '';
+
+        const loginBtn = document.querySelector('[data-modal-target="modal-auth"]');
+        const logoutBtn = $('btn-logout');
+        if (logoutBtn && loginBtn) {
+          if (currentEmail) {
+            logoutBtn.style.display = 'inline-flex';
+            loginBtn.style.display = 'none';
+          } else {
+            logoutBtn.style.display = 'none';
+            loginBtn.style.display = 'inline-flex';
+          }
+        }
+
+        const ids = ['auth-email', 'reg-email', 'sub-email', 'list-email'];
+        ids.forEach((id) => {
+          const el = $(id);
+          if (el && !el.value) el.value = currentEmail;
+        });
+
+        updateDevUI();
+
+        if (currentEmail) {
+          callJson(`/api/users/favorites/${encodeURIComponent(currentEmail)}`)
+            .then((data) => {
+              favorites = Array.isArray(data.favorites) ? data.favorites : [];
+              renderFavorites();
+            })
+            .catch(() => {
+              favorites = [];
+              renderFavorites();
+            });
+          log('Current user', { email: currentEmail });
+        } else {
+          favorites = [];
+          renderFavorites();
+        }
+      }
+
+      // ---------- subscriptions list helpers ----------
+
+      function renderSubsList(email, payload) {
+        const container = $('subs-list');
+        if (!container) return;
+
+        if (!email) {
+          container.textContent = 'Login first to see your subscriptions.';
+          return;
+        }
+
+        const subs = payload && Array.isArray(payload.subs) ? payload.subs : [];
+        if (!subs.length) {
+          container.textContent = `No subscriptions for ${email}.`;
+          return;
+        }
+
+        const rows = subs
+          .map(
+            (s) => `
+              <li data-sub-id="${s._id || ''}">
+                stop <code>${s.stop_id}</code>,
+                trip <code>${s.trip_id}</code>${
+                  s.notifyBeforeMinutes != null
+                    ? ` (notify ${s.notifyBeforeMinutes} min before)`
+                    : ''
+                }
+                <button
+                  type="button"
+                  class="secondary small unsub-sub-btn"
+                  data-sub-id="${s._id || ''}"
+                  style="padding:0 0.5rem;font-size:0.7rem;margin-left:0.4rem"
+                >
+                  Unsubscribe
+                </button>
+              </li>
+            `
+          )
+          .join('');
+
+        container.innerHTML = `<ul style="padding-left:1.1rem;margin:0.2rem 0 0">${rows}</ul>`;
+
+        container.querySelectorAll('.unsub-sub-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const subId = btn.getAttribute('data-sub-id');
+            if (!subId) return;
+            const path = `/api/subscriptions/${encodeURIComponent(subId)}`;
+            try {
+              log(`DELETE ${path}`, { email });
+              await callJson(path, { method: 'DELETE' });
+              await loadMySubscriptions();
+            } catch (err) {
+              log('Error unsubscribing', err);
+              alert('Failed to unsubscribe (see console modal).');
+            }
+          });
+        });
+      }
+
+      async function loadMySubscriptions() {
+        const container = $('subs-list');
+        const email =
+          currentEmail ||
+          ($('list-email') && $('list-email').value.trim());
+        if (!container) return;
+
+        if (!email) {
+          container.textContent = 'Login first to see your subscriptions.';
+          return;
+        }
+
+        if ($('list-email')) {
+          $('list-email').value = email;
+        }
+
+        try {
+          const path = `/api/subscriptions/by-email/${encodeURIComponent(
+            email
+          )}`;
+          log(`GET ${path}`);
+          const data = await callJson(path);
+          log('Subscriptions for email', data);
+          renderSubsList(email, data);
+        } catch (err) {
+          log('Error loading my subscriptions', err);
+          container.textContent = 'Failed to load subscriptions.';
+        }
+      }
+
+      // ------------ logging / helper fetch -------------
       function log(msg, obj) {
         const time = new Date().toLocaleTimeString();
         let text = `[${time}] ${msg}`;
@@ -469,7 +746,7 @@
         const url = API_BASE + path;
         const opts = {
           headers: { 'Content-Type': 'application/json' },
-          ...options,
+          ...options
         };
         if (opts.body && typeof opts.body !== 'string') {
           opts.body = JSON.stringify(opts.body);
@@ -483,8 +760,6 @@
       }
 
       // ------------ map init -------------
-
-      // Default center = Illini Union-ish
       const DEFAULT_CENTER = [40.1099, -88.2272];
 
       function initMap() {
@@ -494,7 +769,7 @@
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors',
+          attribution: '&copy; OpenStreetMap contributors'
         }).addTo(stopMap);
 
         stopMarker = L.marker(DEFAULT_CENTER).addTo(stopMap);
@@ -502,11 +777,11 @@
       }
 
       // ------------ time helpers -------------
-
       function parseMtdTimeToDate(now, timeStr) {
         if (!timeStr) return null;
         const parts = timeStr.split(':').map((x) => parseInt(x, 10));
-        if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return null;
+        if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1]))
+          return null;
 
         let [h, m, s] = parts;
         if (Number.isNaN(s)) s = 0;
@@ -521,7 +796,6 @@
       }
 
       // ------------ render arrivals -------------
-
       function renderArrivals(stopId, data) {
         arrivalsTable.innerHTML = '';
         stopMeta.textContent = '';
@@ -551,7 +825,7 @@
             headsign: trip.trip_headsign || '',
             arrivalStr,
             diffMin,
-            arrivalDate,
+            arrivalDate
           });
         }
 
@@ -564,7 +838,9 @@
         const limited = rows.slice(0, 12);
 
         const soonest = limited[0];
-        stopMeta.textContent = `Showing ${limited.length} upcoming arrivals for stop ${stopId}. Next bus in ${
+        const isFav = favorites.includes(stopId);
+        const favSuffix = isFav ? ' [★ favorite stop]' : '';
+        stopMeta.textContent = `Showing ${limited.length} upcoming arrivals for stop ${stopId}${favSuffix}. Next bus in ${
           soonest.diffMin >= 0 ? soonest.diffMin : '<1'
         } min at ${soonest.arrivalStr}.`;
 
@@ -585,7 +861,16 @@
             return `
               <tr>
                 <td><span class="pill">${r.route}</span></td>
-                <td><span class="pill pill-soft">${r.tripId}</span></td>
+                <td>
+                  <button
+                    type="button"
+                    class="secondary trip-subscribe-btn"
+                    data-trip="${r.tripId}"
+                    data-stop="${stopId}"
+                  >
+                    ${r.tripId}
+                  </button>
+                </td>
                 <td>${r.headsign || '<span class="muted">—</span>'}</td>
                 <td>${r.arrivalStr}</td>
                 <td>${diffLabel}</td>
@@ -595,10 +880,43 @@
           .join('');
 
         arrivalsTable.innerHTML = header + `<tbody>${bodyRows}</tbody>`;
+
+        // trip buttons => subscribe current user to stop_id + trip_id
+        arrivalsTable
+          .querySelectorAll('.trip-subscribe-btn')
+          .forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              if (!currentEmail) {
+                alert('Login first to subscribe to a trip');
+                return;
+              }
+              const trip_id = btn.getAttribute('data-trip');
+              const stop_id = btn.getAttribute('data-stop');
+              if (!trip_id || !stop_id) return;
+
+              const body = { email: currentEmail, stop_id, trip_id };
+
+              try {
+                log('POST /api/subscriptions (via trip button)', body);
+                const data = await callJson('/api/subscriptions', {
+                  method: 'POST',
+                  body
+                });
+                log('Subscribed to trip', data);
+                alert(`Subscribed ${currentEmail} to ${stop_id} / ${trip_id}`);
+                // refresh list if subscriptions modal is open
+                if (document.getElementById('modal-subscriptions')?.classList.contains('open')) {
+                  loadMySubscriptions();
+                }
+              } catch (err) {
+                log('Error subscribing from trip button', err);
+                alert('Failed to subscribe (see console modal)');
+              }
+            });
+          });
       }
 
       // ------------ map render helpers -------------
-
       function renderStopMap(stopInfo) {
         if (!stopInfo) return;
         initMap();
@@ -625,17 +943,15 @@
 
         if (!latlngs.length) return;
 
-        // Remove any previous line so we just show the current route
         if (routeLine) {
           stopMap.removeLayer(routeLine);
           routeLine = null;
         }
 
-        // Bright, high-contrast route line
         routeLine = L.polyline(latlngs, {
           weight: 6,
           opacity: 0.95,
-          color: '#22c55e',        // bright green
+          color: '#22c55e',
           lineJoin: 'round',
           lineCap: 'round'
         }).addTo(stopMap);
@@ -647,17 +963,18 @@
           log('Drew route polyline', {
             stop: departureMeta.stopId,
             route: label,
-            shape_id: departureMeta.shapeId,
+            shape_id: departureMeta.shapeId
           });
         }
 
-        // Zoom the map to fit the whole route nicely
         stopMap.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
       }
 
       async function fetchAndRenderRouteForStop(stopId) {
         try {
-          const deps = await callJson(`/api/mtd/departures?stop_id=${encodeURIComponent(stopId)}`);
+          const deps = await callJson(
+            `/api/mtd/departures?stop_id=${encodeURIComponent(stopId)}`
+          );
           const list = deps.departures || deps.departure || [];
           if (!Array.isArray(list) || !list.length) {
             log('No live departures available for route mapping at this stop');
@@ -682,7 +999,8 @@
               (d.route && (d.route.route_short_name || d.route.route_id)) ||
               (d.trip && d.trip.route_id) ||
               '',
-            routeId: (d.route && d.route.route_id) || (d.trip && d.trip.route_id) || '',
+            routeId:
+              (d.route && d.route.route_id) || (d.trip && d.trip.route_id) || ''
           };
 
           renderRoutePolyline(points, meta);
@@ -692,28 +1010,89 @@
       }
 
       // ------------ event handlers -------------
+      $('btn-auth-register').addEventListener('click', async () => {
+        const email = $('auth-email').value.trim();
+        const password = $('auth-password').value.trim();
+        if (!email || !password) {
+          alert('Email and password are required');
+          return;
+        }
+        try {
+          log('POST /api/users/register', { email });
+          const data = await callJson('/api/users/register', {
+            method: 'POST',
+            body: { email, password }
+          });
+          log('Registered user', data);
+          setCurrentEmail(email);
+          alert('Registered successfully');
+        } catch (err) {
+          log('Error registering user', err);
+          alert('Register failed (see console modal)');
+        }
+      });
+
+      $('btn-auth-login').addEventListener('click', async () => {
+        const email = $('auth-email').value.trim();
+        const password = $('auth-password').value.trim();
+        if (!email || !password) {
+          alert('Email and password are required');
+          return;
+        }
+        try {
+          log('POST /api/users/login', { email });
+          const data = await callJson('/api/users/login', {
+            method: 'POST',
+            body: { email, password }
+          });
+          log('Login ok', data);
+          setCurrentEmail(email);
+          alert('Login successful');
+        } catch (err) {
+          log('Error logging in', err);
+          alert('Login failed (see console modal)');
+        }
+      });
+
+      $('btn-logout').addEventListener('click', () => {
+        currentEmail = '';
+        favorites = [];
+        renderFavorites();
+        setCurrentEmail('');
+        log('Logged out');
+        alert('Logged out');
+      });
 
       $('btn-register').addEventListener('click', async () => {
-        const email = $('reg-email').value.trim();
+        const email = $('reg-email').value.trim() || currentEmail;
         let fcmToken = $('reg-token').value.trim();
-        if(!fcmToken) {
+        if (!fcmToken) {
           Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
-              const messaging = window.messaging
-              const currentToken = window.getToken(messaging, { vapidKey: 'BATbmublcxZvBHWXNSZf590-nWwZal5yBFnoCQEVuEQWkyFlQ7wYAMMjqF88LS7gEXn9_EmVWoVnvCbi3r6ywjg'}).then((currentToken) => {
-                if (currentToken) {
-                  log('Obtained FCM token from Firebase', currentToken);
-                  $('reg-token').value = currentToken;
-                  fcmToken = currentToken;
-                } else {
-                  alert('No registration token available. Request permission to generate one.');
-                }
-              }).catch((err) => {
-                log('An error occurred while retrieving token. ', err);
-              });
-
+              const messaging = window.messaging;
+              window
+                .getToken(messaging, {
+                  vapidKey:
+                    'BATbmublcxZvBHWXNSZf590-nWwZal5yBFnoCQEVuEQWkyFlQ7wYAMMjqF88LS7gEXn9_EmVWoVnvCbi3r6ywjg'
+                })
+                .then((currentToken) => {
+                  if (currentToken) {
+                    log('Obtained FCM token from Firebase', currentToken);
+                    $('reg-token').value = currentToken;
+                    fcmToken = currentToken;
+                  } else {
+                    alert(
+                      'No registration token available. Request permission to generate one.'
+                    );
+                  }
+                })
+                .catch((err) => {
+                  log('An error occurred while retrieving token. ', err);
+                });
             } else {
-              alert('Notification permission denied. Cannot obtain FCM token.');
+              alert(
+                'Notification permission denied. Cannot obtain FCM token.'
+              );
             }
           });
         }
@@ -725,7 +1104,7 @@
           log('POST /api/users/register-token', { email, fcmToken });
           const data = await callJson('/api/users/register-token', {
             method: 'POST',
-            body: { email, fcmToken },
+            body: { email, fcmToken }
           });
           log('Success: token registered', data);
         } catch (err) {
@@ -734,7 +1113,7 @@
       });
 
       $('btn-subscribe').addEventListener('click', async () => {
-        const email = $('sub-email').value.trim();
+        const email = $('sub-email').value.trim() || currentEmail;
         const stop_id = $('sub-stop').value.trim();
         const trip_id = $('sub-trip').value.trim();
         const minsRaw = $('sub-mins').value.trim();
@@ -748,39 +1127,86 @@
           log('POST /api/subscriptions', body);
           const data = await callJson('/api/subscriptions', {
             method: 'POST',
-            body,
+            body
           });
           log('Success: subscription upserted', data);
+          // Refresh "My subscriptions" if modal is open
+          if (document.getElementById('modal-subscriptions')?.classList.contains('open')) {
+            loadMySubscriptions();
+          }
         } catch (err) {
           log('Error creating subscription', err);
         }
       });
 
-      $('btn-list-email').addEventListener('click', async () => {
-        const email = $('list-email').value.trim();
-        if (!email) {
-          alert('Enter an email to list subscriptions for');
+      // cancel create/update subscription panel
+      (() => {
+        const block = $('sub-create-block');
+        const btn = $('btn-sub-cancel');
+        const trigger = $('btn-show-create-sub'); // the button that opens the panel
+
+        if (btn && block && trigger) {
+          btn.addEventListener('click', () => {
+            block.style.display = 'none';                 // hide mini popup
+            trigger.style.display = 'inline-flex';        // show main button again
+          });
+        }
+      })();
+
+      $('btn-save-favorite').addEventListener('click', async () => {
+        const stopInput = $('stop-id');
+        const stopId = stopInput ? stopInput.value.trim() : '';
+        if (!currentEmail) {
+          alert('Login first to save favorites');
           return;
         }
-        const path = `/api/subscriptions/by-email/${encodeURIComponent(email)}`;
+        if (!stopId) {
+          alert('Enter a stop ID to save');
+          return;
+        }
         try {
-          log(`GET ${path}`);
-          const data = await callJson(path);
-          log('Subscriptions for email', data);
+          const body = { email: currentEmail, stop_id: stopId };
+          log('POST /api/users/favorites/add', body);
+          const data = await callJson('/api/users/favorites/add', {
+            method: 'POST',
+            body
+          });
+
+          // Try a few shapes: {favorites: [...]}, or {user: {favorites: [...]}}
+          let favs = data && Array.isArray(data.favorites)
+            ? data.favorites
+            : data && data.user && Array.isArray(data.user.favorites)
+            ? data.user.favorites
+            : null;
+
+          if (!Array.isArray(favs)) {
+            // Fall back to reloading from backend if shape is unexpected
+            const reload = await callJson(
+              `/api/users/favorites/${encodeURIComponent(currentEmail)}`
+            );
+            favs = Array.isArray(reload.favorites) ? reload.favorites : [];
+          }
+
+          favorites = favs;
+          renderFavorites();
         } catch (err) {
-          log('Error listing subscriptions by email', err);
+          log('Error saving favorite', err);
         }
       });
 
-      $('btn-list-all').addEventListener('click', async () => {
-        try {
-          log('GET /api/subscriptions');
-          const data = await callJson('/api/subscriptions');
-          log('All subscriptions (limited)', data);
-        } catch (err) {
-          log('Error listing all subscriptions', err);
-        }
-      });
+      // optional dev-only: list all subs
+      const btnListAll = $('btn-list-all');
+      if (btnListAll) {
+        btnListAll.addEventListener('click', async () => {
+          try {
+            log('GET /api/subscriptions');
+            const data = await callJson('/api/subscriptions');
+            log('All subscriptions (limited)', data);
+          } catch (err) {
+            log('Error listing all subscriptions', err);
+          }
+        });
+      }
 
       $('btn-stop-times').addEventListener('click', async () => {
         const stopId = $('stop-id').value.trim();
@@ -791,7 +1217,9 @@
 
         try {
           log(`GET /api/mtd/stop-times?stop_id=${stopId}`);
-          const data = await callJson(`/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`);
+          const data = await callJson(
+            `/api/mtd/stop-times?stop_id=${encodeURIComponent(stopId)}`
+          );
           log('MTD stop times raw response', data);
           renderArrivals(stopId, data);
 
@@ -817,8 +1245,24 @@
         if (out) out.textContent = 'Cleared.\n';
       });
 
-      // ------------ modal wiring -------------
+      // subscriptions: refresh + toggle create block
+      const btnSubsRefresh = $('btn-subs-refresh');
+      if (btnSubsRefresh) {
+        btnSubsRefresh.addEventListener('click', () => {
+          loadMySubscriptions();
+        });
+      }
 
+      const showCreateBtn = $('btn-show-create-sub');
+      const subCreateBlock = $('sub-create-block');
+      if (showCreateBtn && subCreateBlock) {
+        showCreateBtn.addEventListener('click', () => {
+          subCreateBlock.style.display = 'block';
+          showCreateBtn.style.display = 'none'; // hide the top button once opened
+        });
+      }
+
+      // ------------ modal wiring -------------
       function openModal(id) {
         const el = document.getElementById(id);
         if (el) el.classList.add('open');
@@ -831,7 +1275,11 @@
       document.querySelectorAll('[data-modal-target]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-modal-target');
-          if (id) openModal(id);
+          if (!id) return;
+          openModal(id);
+          if (id === 'modal-subscriptions') {
+            loadMySubscriptions();
+          }
         });
       });
 
@@ -845,7 +1293,11 @@
       });
 
       // Initialize map once DOM is ready
-      document.addEventListener('DOMContentLoaded', initMap);
+      document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+        updateDevUI();
+        renderFavorites();
+      });
     </script>
   </body>
 </html>
